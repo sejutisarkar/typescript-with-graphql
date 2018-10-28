@@ -8,12 +8,12 @@ beforeAll(async () => {
   await createTypeormConn();
 });
 
-const email = "test10@bob.com";
-const password = "j";
+const email = "test18@bob.com";
+const password = "jertyu";
 
-const mutation = `
+const mutation = (e ,p) => `
 mutation {
-  register(email: "${email}", password: "${password}"){
+  register(email: "${e}", password: "${p}"){
     path
     message
   }
@@ -21,7 +21,7 @@ mutation {
 `;
 
 test("Register user", async() => {
-  const response = await request(host, mutation);
+  const response = await request(host, mutation(email,password));
   expect(response).toEqual({ register: null });
   // console.log(email);
   const users =  await User.find({where: {email : email}});
@@ -31,7 +31,7 @@ test("Register user", async() => {
   expect(user.email).toEqual(email);
   expect(user.password).not.toEqual(password);
 
-  const response2 = await request(host, mutation);
+  const response2 = await request(host, mutation(email,password));
   assert.lengthOf(response2.register,1);
   expect(response2.register[0].path).toEqual('email');
 });

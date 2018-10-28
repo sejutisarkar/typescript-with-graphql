@@ -2,11 +2,13 @@ import {ResolverMap} from '../../types/graphql-utils';
 import * as bcrypt from 'bcrypt';
 import {User} from '../../entity/User';
 import * as yup from 'yup';
-
+import {formatYupErrors} from '../../utils/formatYupErrors';
+import {createConfirmEmailLink} from '../../utils/createConfirmEmailLink';
+import {sendEmail} from '../../utils/sendEmail';
 const schema = yup.object().shape({
   email: yup
     .string()
-    .min(3)
+    .min(3,'bad email')
     .max(255)
     .email(),
   password: yup
@@ -21,12 +23,14 @@ export const resolvers: ResolverMap = {
   Mutation: {
     register: async (
       _,
-      args: any
+      args: any,
+      {redis, url}
     ) => {
       try{
         await schema.validate(args,{abortEarly: false});
       }catch(err){
-        console.log(err);
+        // console.log(err);
+        return formatYupErrors(err);
       }
       const {email, password} = args;
       const userAlreadyExist = await User.findOne({
@@ -48,6 +52,8 @@ export const resolvers: ResolverMap = {
       });
 
       await user.save();
+
+      await sendEmail(email, await createConfirmEmailLink(url,user.id,redis));
       return null;
     }
   }
